@@ -1,7 +1,9 @@
 import random, pygame, sys,time
 from const import *
+from Imageload import *
 
 import sys
+from pygame.locals import *
 
 
 #이미지의 위치를 확인하는데 사용할 버튼클래스 : isOver사용
@@ -51,6 +53,24 @@ def Show_Image_Transform_Size(position_x,position_y,image,imageWidth,imageHeight
 def Show_Image(position_x,position_y,image):
     screen.blit(image,(position_x,position_y))
 
+
+def checkForKeyPress():
+    pygame.init()
+    if len(pygame.event.get(QUIT)) > 0:
+        terminate()
+
+    keyUpEvents = pygame.event.get(KEYUP)
+    if len(keyUpEvents) == 0:
+        return None
+    if keyUpEvents[0].key == K_ESCAPE:
+        terminate()
+    return keyUpEvents[0].key
+
+def terminate():
+    pygame.quit()
+    sys.exit()
+
+
 ##----이미지 넣는예시----##
 #x,y position에 이미지 크기 조정해서 넣는 함수
 #Show_Image_Transform_Size(100,100,img,200,700)
@@ -58,9 +78,12 @@ def Show_Image(position_x,position_y,image):
 #Show_Image(300,300,img)
 ##-----------------------##
 
-img = pygame.image.load("Images/githubImage.jpg")
+#img = pygame.image.load("Images/githubImage.jpg")
 
 run = True
+
+#event loop while문으로 함수로 빼서 사용해봄
+Lobby = True
 
 pygame.init()
 pygame.display.set_caption("EEG ADHD Neuro Feedback Game")
@@ -75,14 +98,43 @@ clock = pygame.time.Clock()
 
 gamestate=GAME_LOBBY
 
+
+# def draw_LOBBY():
+#     while Lobby:
+#         Show_text(SCREEN_WIDTH / 3, SCREEN_HEIGHT / 4, "색상 게임에 오신것을 환영합니다.")
+#
+#
+#         Show_Image_Transform_Size(200, 550, game_start_btn_circle_img, START_BUTTON_WIDTHSIZE,
+#                                   START_BUTTON_HEIGHT_SIZE)  # START 이미지 삽입해주는 것
+#         Button0 = button((0, 255, 0), 200, 550, START_BUTTON_WIDTHSIZE,
+#                          START_BUTTON_HEIGHT_SIZE)  # 이미지를 삽입한곳과 똑같은 버튼을 만들어 해당 이미지를 클릭했을 때 이벤트가 발생할 수 있게 함.
+#
+#         Show_Image_Transform_Size(900, 550, game_quit_btn_circle_img, START_BUTTON_WIDTHSIZE,
+#                                   START_BUTTON_HEIGHT_SIZE)  # 이미지 삽입해주는 것
+#         Button1 = button((0, 255, 0), 900, 550, QUIT_BUTTON_WIDTHSIZE, QUIT_BUTTON_HEIGHTSIZE,
+#                          START_BUTTON_HEIGHT_SIZE)  # 이미지를 삽입한곳과 똑같은 버튼을 만들어 해당 이미지를 클릭했을 때 이벤트가 발생할 수 있게 함.
+#         for event in pygame.event.get():
+#             # print('Event Loop')
+#             if event.type == pygame.QUIT:  # 애플리케이션을 종료하고자 하면
+#                 Lobby = False;
+#             if (event.type == pygame.MOUSEBUTTONDOWN):  # and event.type == pygame.MOUSEBUTTONDOWN
+#                 Show_text(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 5, "마우스 눌렸음!!")
+#                 pos = pygame.mouse.get_pos()
+#                 if Button0.isOver(pos):
+#                     print('Start')
+#                 if Button1.isOver(pos):
+#                     print('Quit')
+#             if not hasattr(event, 'key'): # 키 관련 이벤트가 아닐 경우, 건너뛰도록 처리하는 부분
+#                  continue;
+#     pygame.display.flip()
+
+
+
 while run:
     screen.fill(black)
 
 
-    pygame.draw.rect(screen, white,(SCREEN_WIDTH // 2, SCREEN_HEIGHT //2, 100, 100))    #정사각형 그림그려주는 것
-    Show_Image_Transform_Size(200, 200, img, 100, 100)                                  #이미지 삽입해주는 것
-    Button0 = button((0, 255, 0), SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, 100, 100)  # 이미지를 삽입한곳과 똑같은 버튼을 만들어 해당 이미지를 클릭했을 때 이벤트가 발생할 수 있게 함.
-    Button1 = button((0, 255, 0), 200, 200, 100, 100)                               # 버튼을 삽입한곳과 똑같은 버튼을 만들어 해당 이미지를 클릭했을 때 이벤트가 발생할 수 있게 함.
+    #  pygame.draw.rect(screen, white,(SCREEN_WIDTH // 2, SCREEN_HEIGHT //2, 100, 100))    #정사각형 그림그려주는 것
 
 
     #어떤 화면인지 판가름하게 해주는 state를 나중에 만들어줄 생각
@@ -92,29 +144,53 @@ while run:
     # elif (GAME_END==state) : 종료단계일때
 
     if(GAME_LOBBY==1):  #로비일때: GAME_LOBBY 진행단계일때
+        #print('In GameLobby')
+
+        #def draw_LOBBY():
         Show_text(SCREEN_WIDTH / 3, SCREEN_HEIGHT / 4, "색상 게임에 오신것을 환영합니다.")
+        Show_Image_Transform_Size(200, 550, game_start_btn_circle_img, START_BUTTON_WIDTHSIZE,
+                                  START_BUTTON_HEIGHT_SIZE)  # START 이미지 삽입해주는 것
+        Button0 = button((0, 255, 0), 200, 550, START_BUTTON_WIDTHSIZE,
+                         START_BUTTON_HEIGHT_SIZE)  # 이미지를 삽입한곳과 똑같은 버튼을 만들어 해당 이미지를 클릭했을 때 이벤트가 발생할 수 있게 함.
+
+        Show_Image_Transform_Size(900, 550, game_quit_btn_circle_img, START_BUTTON_WIDTHSIZE,
+                                  START_BUTTON_HEIGHT_SIZE)  # 이미지 삽입해주는 것
+        Button1 = button((0, 255, 0), 900, 550, QUIT_BUTTON_WIDTHSIZE, QUIT_BUTTON_HEIGHTSIZE,
+                         START_BUTTON_HEIGHT_SIZE)  # 이미지를 삽입한곳과 똑같은 버튼을 만들어 해당 이미지를 클릭했을 때 이벤트가 발생할 수 있게 함.
         for event in pygame.event.get():
+            #print('Event Loop')
             if event.type==pygame.QUIT:
                 run=False;
             if (event.type == pygame.MOUSEBUTTONDOWN):  # and event.type == pygame.MOUSEBUTTONDOWN
                     Show_text(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 5, "마우스 눌렸음!!")
                     pos = pygame.mouse.get_pos()
                     if Button0.isOver(pos):
-                        print('Clickevent')
+                        GAME_PLAY==True;
+                        print('Start')
                     if Button1.isOver(pos):
-                        print('ImageClick')
-            if not hasattr(event, 'key'): # 키 관련 이벤트가 아닐 경우, 건너뛰도록 처리하는 부분
-                continue;
+                        print('Quit')
+    if checkForKeyPress():
+        pygame.event.get()
+        cln()
+        break
 
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:  # 애플리케이션을 종료하고자 하면
-            run = False;
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                run = False
-        if not hasattr(event, 'key'):  # 키 관련 이벤트가 아닐 경우, 건너뛰도록 처리하는 부분
-            continue
+        pygame.display.update()
+            # if not hasattr(event, 'key'): # 키 관련 이벤트가 아닐 경우, 건너뛰도록 처리하는 부분
+            #     continue;
+        #print('In Game_Lobby')
+
+    if(GAME_PLAY==TRUE):
+        print('Some Place')
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:  # 애플리케이션을 종료하고자 하면
+                run = False;
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    run = False
+            # if not hasattr(event, 'key'):  # 키 관련 이벤트가 아닐 경우, 건너뛰도록 처리하는 부분
+            #     continue
+    #print('Out of Side')
     clock.tick(60)
     pygame.display.flip()
 
