@@ -1,4 +1,4 @@
-# Neuro-Egg - redflavor Team
+# Neuro-Egg : redflavor Team
 - 가정에서도 쉽게 접근할 수 있으며 비대면 시대에 스스로와 주변 지인에 대해 병원에 가지않고도 주의력 여부를 자가진단할 수 있는 모델링 제시  
 
 # 개발 개요
