@@ -1,0 +1,165 @@
+import pandas as pd
+import numpy as np
+import time
+from scipy import io
+
+
+class frame_calculator:
+    def __init__(self, client, sub: list):
+        self.client = client
+        self.sub = sub
+        self.sub_data = client.subscribe(streams=sub)
+        self.data_title = {}
+        for i in range(len(self.sub_data['success'])):
+            self.data_title[self.sub_data['success'][i]['streamName']] = self.sub_data['success'][i]['cols']
+        self.title_chk = {}
+        print(self.data_title.keys())
+        for key in self.data_title.keys():
+            self.title_chk[key] = 1
+
+    def export_csv(self, data_frame: dict, file_name=None):
+        for data in data_frame.keys():
+            fil = f'./{file_name}/'
+            try:
+                os.mkdir(fil)
+            except:
+                pass
+            if self.title_chk[data] is 1:
+                data_frame[data].to_csv(f'./{file_name}/{data}.csv', mode='w', header=True, index=False)
+                self.title_chk[data] = 0
+            else:
+                data_frame[data].to_csv(f'./{file_name}/{data}.csv', mode='a', header=False, index=False)
+
+    def data_stream_mk_data_frame(self, data_values: dict):
+        data_sample_frames = {}
+        if 'mot' in data_values.keys():
+            data_sample_frames['mot'] = pd.DataFrame(
+                data=np.array(data_values['mot']['data']).reshape(1, len(self.data_title['mot'])),
+                columns=self.data_title['mot'])
+            data_sample_frames['mot'].insert(0, "time", [
+                time.strftime('%y-%m-%d-%I:%M:%S', time.localtime(data_values['mot']['time']))], True)
+
+        if 'pow' in data_values.keys():
+            data_sample_frames['pow'] = pd.DataFrame(
+                data=np.array(data_values['pow']['data']).reshape(1, len(self.data_title['pow'])),
+                columns=self.data_title['pow'])
+            data_sample_frames['pow'].insert(0, "time", [
+                time.strftime('%y-%m-%d-%I:%M:%S', time.localtime(data_values['pow']['time']))], True)
+
+        if 'met' in data_values.keys():
+            data_sample_frames['met'] = pd.DataFrame(
+                data=np.array(data_values['met']['data']).reshape(1, len(self.data_title['met'])),
+                columns=self.data_title['met'])
+            data_sample_frames['met'].insert(0, "time", [
+                time.strftime('%y-%m-%d-%I:%M:%S', time.localtime(data_values['met']['time']))], True)
+
+        if 'eeg' in data_values.keys():
+            data_values['eeg']['data'] = np.array(data_values['eeg']['data'][:-1])
+            data_values['eeg']['data'][2:7] = data_values['eeg']['data'][2:7] - 4000
+            try:
+                data_sample_frames['eeg'] = pd.DataFrame(
+                    data=data_values['eeg']['data'].reshape(1, len(self.data_title['eeg']) - 1),
+                    columns=self.data_title['eeg'][:-1])
+            except:
+                pass
+            data_sample_frames['eeg'].insert(0, "time", [
+                time.strftime('%y-%m-%d-%I:%M:%S', time.localtime(data_values['eeg']['time']))], True)
+        return data_sample_frames
+
+    def data_request_mk_data_frame(self, data_values: dict):
+        data_sample_frames = {}
+        if 'mot' in data_values.keys():
+            data_sample_frames['mot'] = pd.DataFrame(
+                data=np.array(data_values['mot']).reshape(1, len(self.data_title['mot'])),
+                columns=self.data_title['mot'])
+            data_sample_frames['mot'].insert(0, "time", [
+                time.strftime('%y-%m-%d-%I:%M:%S', time.localtime(data_values['time']))], True)
+
+        if 'pow' in data_values.keys():
+            data_sample_frames['pow'] = pd.DataFrame(
+                data=np.array(data_values['pow']).reshape(1, len(self.data_title['pow'])),
+                columns=self.data_title['pow'])
+            data_sample_frames['pow'].insert(0, "time", [
+                time.strftime('%y-%m-%d-%I:%M:%S', time.localtime(data_values['time']))], True)
+
+        if 'met' in data_values.keys():
+            data_sample_frames['met'] = pd.DataFrame(
+                data=np.array(data_values['met']['data']).reshape(1, len(self.data_title['met'])),
+                columns=self.data_title['met'])
+            data_sample_frames['met'].insert(0, "time", [
+                time.strftime('%y-%m-%d-%I:%M:%S', time.localtime(data_values['time']))], True)
+
+        if 'eeg' in data_values.keys():
+            data_values['eeg'] = np.array(data_values['eeg'][:-1])
+            data_values['eeg'][2:7] = data_values['eeg'][2:7] - 4000
+            try:
+                data_sample_frames['eeg'] = pd.DataFrame(
+                    data=data_values['eeg'].reshape(1, len(self.data_title['eeg']) - 1),
+                    columns=self.data_title['eeg'][:-1])
+            except:
+                pass
+            data_sample_frames['eeg'].insert(0, "time", [
+                time.strftime('%y-%m-%d-%I:%M:%S', time.localtime(data_values['time']))], True)
+        return data_sample_frames
+
+    def eeg_frequency_to_csv(self, file_name):
+        chk = 1
+        self.client.unsubscribe(streams=self.sub)
+        while True:
+
+            if chk == 1:
+                self.client.unsubscribe(streams=[self.sub[1]])
+                self.sub_data = self.client.subscribe(streams=[self.sub[0]])
+
+            else:
+                self.client.unsubscribe(streams=[self.sub[0]])
+                self.sub_data = self.client.subscribe(streams=[self.sub[1]])
+
+            self.client.request_access()
+            eeg_data = list(self.client.data_streams.values())[0]
+            print(eeg_data)
+            values = {}
+            for i in self.sub:
+                if len(eeg_data[i]) != 0:
+                    values[i] = eeg_data[i][0]
+
+            try:
+                data_sample_frames = self.data_stream_mk_data_frame(data_values=values)
+                self.export_csv(data_sample_frames, file_name)
+
+            except (IndexError, KeyError):
+                pass
+
+            for i in self.sub:
+                if len(eeg_data[i]) != 0:
+                    eeg_data[i].popleft()
+            chk ^= 1
+            time.sleep(1)
+
+
+def matToCSV(load_fath, load_ws, save_fath, features: list, leave_column: list):
+    mat_file = io.loadmat(load_fath)
+    pd.DataFrame(data=mat_file[load_ws], columns=features)[leave_column].to_csv(f'{save_fath}', index=False)
+
+
+import os
+
+if __name__ == '__main__':
+    try:
+        file_name = f"All_channel_Control_dataSet"
+        os.mkdir('./' + file_name)
+    except:
+        pass
+
+    for i in range(330):
+        print(i)
+        try:
+            matToCSV(load_fath=f'C:/Users/tjqn1/Downloads/Control_part2/Control_part2/v{i}.mat', load_ws=f'v{i}',
+                     features=['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'F7', 'F8', 'T7', 'T8',
+                               'P7',
+                               'P8', 'Fz', 'Cz', 'Pz'], save_fath=f'./{file_name}/v{i}p.csv',
+                     leave_column=['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'F7', 'F8', 'T7', 'T8',
+                               'P7',
+                               'P8', 'Fz', 'Cz', 'Pz'])
+        except:
+            pass
